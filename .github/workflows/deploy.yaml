@@ -4,6 +4,7 @@ on:
   push:
     branches:
       - main
+  workflow_dispatch:
 
 env:
   NEXUS_HELM_REPO: ${{ vars.NEXUS_HELM_REPO }}
@@ -20,6 +21,7 @@ jobs:
   build_and_push_to_docker_hub:
       name: Push Docker image to DockerHub
       runs-on: ubuntu-latest
+      if: github.event_name == 'workflow_dispatch' # Temporarily disable automatic builds on push
       steps:
         - name: Check out the repo
           # Получение исходного кода из репозитория:
@@ -86,11 +88,15 @@ jobs:
               version: 'latest'
 
           - name: Package Helm Chart
-            id: chart
             run: |
               helm dependency update ${{ env.CHART_PATH }}
               helm package ${{ env.CHART_PATH }}
               echo "CHART_PKG=$(ls *.tgz)" >> $GITHUB_ENV
+          
+          - name: Prepare output variables
+            id: chart
+            run: |
+              echo $CHART_PKG
               CHART_NAME=$(helm show chart $CHART_PKG | grep '^name:' | awk '{print $2}')
               CHART_VERSION=$(helm show chart $CHART_PKG | grep '^version:' | awk '{print $2}')
               echo "pkg=$CHART_PKG" >> $GITHUB_OUTPUT
