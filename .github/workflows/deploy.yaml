@@ -90,9 +90,9 @@ jobs:
             run: |
               helm dependency update ${{ env.CHART_PATH }}
               helm package ${{ env.CHART_PATH }}
+              echo "CHART_PKG=$(ls *.tgz)" >> $GITHUB_ENV
               CHART_NAME=$(helm show chart $CHART_PKG | grep '^name:' | awk '{print $2}')
               CHART_VERSION=$(helm show chart $CHART_PKG | grep '^version:' | awk '{print $2}')
-              echo "CHART_PKG=$(ls *.tgz)" >> $GITHUB_ENV
               echo "pkg=$CHART_PKG" >> $GITHUB_OUTPUT
               echo "name=$CHART_NAME" >> $GITHUB_OUTPUT
               echo "version=$CHART_VERSION" >> $GITHUB_OUTPUT
@@ -101,7 +101,7 @@ jobs:
             run: |
               curl -u ${{ env.NEXUS_HELM_REPO_USER }}:${{ env.NEXUS_HELM_REPO_PASSWORD }} \
                 --upload-file $CHART_PKG \
-                ${{ env.NEXUS_HELM_REPO }}/${{ env.CHART_PACKAGE }}
+                ${{ env.NEXUS_HELM_REPO }}/$CHART_PKG
               echo "Helm chart uploaded to Nexus repository: ${{ env.NEXUS_HELM_REPO }}/$CHART_PKG"
 
   # Деплоим приложения в кластер Kubernetes с помощью helm-чарт
@@ -135,6 +135,7 @@ jobs:
             nexus/${{ needs.add_helm_chart_to_nexus.outputs.chart-name }} \
             --version ${{ needs.add_helm_chart_to_nexus.outputs.chart-version }} \
             --namespace ${{ env.SAUSAGE_STORE_NAMESPACE }} \
+            --debug \
             --wait \
             --timeout 10m
 
