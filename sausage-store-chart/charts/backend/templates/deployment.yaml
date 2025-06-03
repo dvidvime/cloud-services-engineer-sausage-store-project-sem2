@@ -31,7 +31,7 @@ spec:
     spec:
       containers:
         - name: {{ .Chart.Name }}
-          image: {{ .Values.image }}
+          image: "{{ .Values.global.imageRegistryUser }}/{{ .Values.global.imageAppNamePrefix }}-{{ .Chart.Name }}:{{ .Chart.AppVersion }}"
           imagePullPolicy: {{ .Values.global.imagePullPolicy }}
           env:
             - name: SPRING_DATASOURCE_URL
@@ -81,6 +81,7 @@ spec:
               path: report_path
             - key: log_path
               path: log_path
+
 ---
 apiVersion: autoscaling.k8s.io/v1
 kind: VerticalPodAutoscaler
@@ -92,6 +93,14 @@ spec:
     kind: Deployment
     name: {{ .Release.Name }}-{{ .Chart.Name }}
   updatePolicy:
-{{ toYaml .Values.vpa.updatePolicy | indent 4 }} 
+    updateMode: {{ .Values.vpa.updateMode | quote}}
   resourcePolicy:
-{{ toYaml .Values.vpa.resourcePolicy | indent 4 }} 
+    containerPolicies:
+      - containerName: '*'
+        minAllowed:
+          cpu: {{ .Values.vpa.resourcePolicy.minAllowed.cpu }}
+          memory: {{ .Values.vpa.resourcePolicy.minAllowed.memory }}
+        maxAllowed:
+          cpu: {{ .Values.vpa.resourcePolicy.maxAllowed.cpu }} 
+          memory: {{ .Values.vpa.resourcePolicy.maxAllowed.memory }}
+        controlledResources: ["cpu", "memory"]

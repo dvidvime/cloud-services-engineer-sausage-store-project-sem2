@@ -16,7 +16,7 @@ spec:
   revisionHistoryLimit: {{ .Values.revisionHistoryLimit }}
   replicas: {{ .Values.replicas }}
   strategy:
-    type: {{ .Values.strategy.type }}
+{{ toYaml .Values.strategy | indent 4 }} 
   selector:
     matchLabels:
       app: {{ .Release.Name }}-{{ .Chart.Name }}
@@ -29,20 +29,50 @@ spec:
         - name: {{ .Chart.Name }}
           image: "{{ .Values.global.imageRegistryUser }}/{{ .Values.global.imageAppNamePrefix }}-{{ .Chart.Name }}:{{ .Chart.AppVersion }}"
           imagePullPolicy: {{ .Values.global.imagePullPolicy }}
+          env:
+            - name: PORT
+              valueFrom:
+                configMapKeyRef:
+                  name: {{ .Release.Name }}-{{ .Chart.Name }}-conf
+                  key: port
+            - name: DB
+              valueFrom:
+                configMapKeyRef:
+                  name: {{ .Release.Name }}-{{ .Chart.Name }}-conf
+                  key: db
           resources:
 {{ toYaml .Values.resources | indent 12 }} 
           ports:
             - name: {{ .Chart.Name }}
               containerPort: {{ .Values.containerPort }}
-          volumeMounts:
-          - name: {{ .Release.Name }}-{{ .Chart.Name }}-conf
-            mountPath: /etc/nginx/{{ .Values.nginxConf }}
-            subPath: {{ .Values.nginxConf }}
-            readOnly: true
+          livenessProbe:
+{{ toYaml .Values.livenessProbe | indent 12 }} 
       volumes:
-        - name: {{ .Release.Name }}-{{ .Chart.Name }}-conf
-          configMap:
-            name: {{ .Release.Name }}-{{ .Chart.Name }}-conf
-            items:
-              - key: {{ .Values.nginxConf }}
-                path: {{ .Values.nginxConf }} 
+      - name: {{ .Release.Name }}-{{ .Chart.Name }}-conf
+        configMap:
+          name: {{ .Release.Name }}-{{ .Chart.Name }}-conf
+          items:
+            - key: port
+              path: port
+            - key: db
+              path: db
+
+---
+apiVersion: autoscaling/v2
+kind: HorizontalPodAutoscaler
+metadata:
+  name: {{ .Release.Name }}-{{ .Chart.Name }}-hpa
+spec:
+  scaleTargetRef:
+    apiVersion: apps/v1
+    kind: Deployment
+    name: {{ .Release.Name }}-{{ .Chart.Name }}
+  minReplicas: {{ .Values.hpa.minReplicas }}
+  maxReplicas: {{ .Values.hpa.maxReplicas }}
+  metrics:
+  - type: Resource
+    resource:
+      name: cpu
+      target:
+        type: Utilization
+        averageUtilization: {{ .Values.hpa.targetCPUUtilizationPercentage }}

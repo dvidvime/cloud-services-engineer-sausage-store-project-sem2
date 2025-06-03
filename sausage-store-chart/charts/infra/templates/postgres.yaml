@@ -1,0 +1,80 @@
+apiVersion: apps/v1
+kind: StatefulSet
+metadata:
+  name: postgres
+spec:
+  serviceName: postgres
+  replicas: 1
+  selector:
+    matchLabels:
+      app: postgres
+  template:
+    metadata:
+      labels:
+        app: postgres
+    spec:
+      containers:
+      - name: postgres
+        image: "postgres:{{ .Values.postgresql.postgresVersion }}"
+        env:
+          - name: PGDATA
+            value: /var/lib/postgresql/data/pgdata
+          - name: POSTGRES_USER
+            valueFrom:
+              secretKeyRef:
+                name: postgres-secret
+                key: POSTGRES_USER
+          - name: POSTGRES_PASSWORD
+            valueFrom:
+              secretKeyRef:
+                name: postgres-secret
+                key: POSTGRES_PASSWORD
+          - name: POSTGRES_DB
+            valueFrom:
+              secretKeyRef:
+                name: postgres-secret
+                key: POSTGRES_DB
+        ports:
+        - containerPort: {{ .Values.postgresql.containerPort }}
+        resources:
+          requests:
+            memory: {{ .Values.postgresql.resources.requests.memory }}
+            cpu: {{ .Values.postgresql.resources.requests.cpu }}
+          limits:
+            memory: {{ .Values.postgresql.resources.limits.memory }}
+            cpu: {{ .Values.postgresql.resources.limits.cpu }}
+        volumeMounts:
+        - name: postgres-data
+          mountPath: /var/lib/postgresql/data
+  volumeClaimTemplates:
+  - metadata:
+      name: postgres-data
+    spec:
+      accessModes: [ "ReadWriteOnce" ]
+      resources:
+        requests:
+          storage: {{ .Values.postgresql.storageSize }}
+---
+apiVersion: v1
+kind: Service
+metadata:
+  name: postgres
+  labels:
+    app: postgres
+spec:
+  ports:
+  - port: {{ .Values.postgresql.containerPort }}
+    targetPort: {{ .Values.postgresql.containerPort }}
+  selector:
+    app: postgres
+  clusterIP: None
+---
+apiVersion: v1
+kind: Secret
+metadata:
+  name: postgres-secret
+type: Opaque
+data:
+  POSTGRES_USER: {{ .Values.postgresql.env.POSTGRES_USER | b64enc | quote}}
+  POSTGRES_PASSWORD: {{ .Values.postgresql.env.POSTGRES_PASSWORD | b64enc | quote }}
+  POSTGRES_DB: {{ .Values.postgresql.env.POSTGRES_DB | b64enc | quote}}
