@@ -90,9 +90,9 @@ jobs:
             run: |
               helm dependency update ${{ env.CHART_PATH }}
               helm package ${{ env.CHART_PATH }}
-              CHART_PKG=$(ls *.tgz)
               CHART_NAME=$(helm show chart $CHART_PKG | grep '^name:' | awk '{print $2}')
               CHART_VERSION=$(helm show chart $CHART_PKG | grep '^version:' | awk '{print $2}')
+              echo "CHART_PKG=$(ls *.tgz)" >> $GITHUB_ENV
               echo "pkg=$CHART_PKG" >> $GITHUB_OUTPUT
               echo "name=$CHART_NAME" >> $GITHUB_OUTPUT
               echo "version=$CHART_VERSION" >> $GITHUB_OUTPUT
