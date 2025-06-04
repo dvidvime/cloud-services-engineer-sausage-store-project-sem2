@@ -2,10 +2,10 @@ global:
   imagePullPolicy: Always
   imageRegistryUser: dvidvi
   imageAppNamePrefix: sausage
-  ###vault:
-  ###  host: ip
-  ###  name: vault
-  ###  vaultToken: someToken
+  vault:
+    host: ip
+    name: vault
+    vaultToken: someToken
 
 frontend:
   replicas: 1

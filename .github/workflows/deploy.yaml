@@ -11,9 +11,10 @@ env:
   NEXUS_HELM_REPO_PASSWORD: ${{ secrets.NEXUS_HELM_REPO_PASSWORD }}
   SAUSAGE_STORE_NAMESPACE: ${{ vars.SAUSAGE_STORE_NAMESPACE }}
   KUBE_CONFIG: ${{ secrets.KUBE_CONFIG }}
-  APP_VERSION: 1.0.0
-  #VAULT_TOKEN: ${{ secrets.VAULT_TOKEN }}
+  VAULT_HOST: ${{ secrets.VAULT_HOST }}
+  VAULT_TOKEN: ${{ secrets.VAULT_TOKEN }}
   CHART_PATH: ./sausage-store-chart
+  APP_VERSION: 1.0.0
 
 jobs:
   build_and_push_to_docker_hub:
@@ -123,6 +124,8 @@ jobs:
             nexus/${{ needs.add_helm_chart_to_nexus.outputs.chart-name }} \
             --version ${{ needs.add_helm_chart_to_nexus.outputs.chart-version }} \
             --namespace ${{ env.SAUSAGE_STORE_NAMESPACE }} \
+            --set global.vault.host=${{ env.VAULT_HOST }} \
+            --set global.vault.vaultToken=${{ env.VAULT_TOKEN }} \
             --debug \
             --wait \
             --timeout 10m
