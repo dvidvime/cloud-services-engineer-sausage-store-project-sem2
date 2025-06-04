@@ -83,6 +83,7 @@ spec:
               path: log_path
 
 ---
+{{ if .Values.vpa.enabled }}
 apiVersion: autoscaling.k8s.io/v1
 kind: VerticalPodAutoscaler
 metadata:
@@ -104,3 +105,4 @@ spec:
           cpu: {{ .Values.vpa.resourcePolicy.maxAllowed.cpu }} 
           memory: {{ .Values.vpa.resourcePolicy.maxAllowed.memory }}
         controlledResources: ["cpu", "memory"]
+{{ end }}

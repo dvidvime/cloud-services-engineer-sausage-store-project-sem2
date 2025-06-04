@@ -17,7 +17,7 @@
 
 Отредактировать параметры в sausage-store-chart/values.yaml и выполнить:
 
-`helm install sausage sausage-store-chart/ --debug`
+`helm upgrade --install sausage sausage-store-chart/ --debug`
 
 ## Demo
 
